@@ -1,0 +1,33 @@
+package com.example.demo.entity;
+
+import com.example.demo.Enum.OrderStatus;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+@Entity
+@Data
+@Builder
+@Table(name = "orders")
+@NoArgsConstructor
+@AllArgsConstructor
+public class Order {
+    @Id
+    @GeneratedValue
+    private UUID id;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+    @OneToMany(mappedBy = "order")
+    private List<OrderItem> orderItems;
+    private Double totalPrice;
+    @Enumerated(EnumType.STRING)
+    private OrderStatus status;
+    private LocalDate createdAt;
+    private LocalDate updatedAt;
+}
