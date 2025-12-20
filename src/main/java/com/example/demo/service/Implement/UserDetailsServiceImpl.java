@@ -1,7 +1,7 @@
 package com.example.demo.service.Implement;
 
 import com.example.demo.entity.User;
-import com.example.demo.repository.AccountRepository;
+import com.example.demo.repository.UserRepository;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,25 +14,25 @@ import java.util.Collections;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
-    private final AccountRepository accountRepository;
+    private final UserRepository userRepository;
 
-    public UserDetailsServiceImpl(AccountRepository accountRepository) {
-        this.accountRepository = accountRepository;
+    public UserDetailsServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = accountRepository.findByUsername(username)
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
+                user.getUsername(),
                 user.getPassword(),
                 getAuthories(user)
         );
     }
 
     private Collection<? extends GrantedAuthority> getAuthories(User user) {
-        String roleName = "ROLE_" + user.getRole().name();
+        String roleName = "ROLE_" + user.getRole().getName().name();
         return Collections.singleton(new SimpleGrantedAuthority(roleName));
     }
 }

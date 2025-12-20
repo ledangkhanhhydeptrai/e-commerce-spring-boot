@@ -21,7 +21,6 @@ public class Role {
     @GeneratedValue
     private UUID id;
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, unique = true)
     private UserRole name;
     @OneToMany(mappedBy = "role")
     private Set<User> users;
