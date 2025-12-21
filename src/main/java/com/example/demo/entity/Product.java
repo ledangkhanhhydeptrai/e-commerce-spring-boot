@@ -21,6 +21,8 @@ public class Product {
     private UUID id;
     @OneToMany(mappedBy = "product")
     private List<OrderItem> orderItems;
+    @Column(name = "name")
+    private String name;
     @Column(name = "quantity")
     private int quantity;
     @Column(name = "price")
