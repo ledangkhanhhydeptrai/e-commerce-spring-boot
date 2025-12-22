@@ -1,10 +1,12 @@
 package com.example.demo.controller;
 
+
 import com.example.demo.dto.request.CreateProductRequest;
 import com.example.demo.dto.response.ProductResponse;
 import com.example.demo.dto.response.ProductResponsePublic;
 import com.example.demo.response.ApiResponse;
 import com.example.demo.service.Interface.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
-@Tag(name = "Product")
+@Tag(name = "Product", description = "Dành cho user và admin")
 public class ProductController {
     @Autowired
     private final ProductService productService;
@@ -26,35 +28,41 @@ public class ProductController {
     }
 
     @GetMapping("/public/product")
+    @Operation(description = "Dành cho admin và user")
     public ResponseEntity<ApiResponse<List<ProductResponsePublic>>> getAllProduct() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
     @GetMapping("/product/admin")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(description = "Dành cho admin")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProductAdmin() {
         return ResponseEntity.ok(productService.getAllProductForAdmin());
     }
 
     @PostMapping("/product/create")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(description = "Dành cho admin")
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@RequestBody CreateProductRequest request) {
         return ResponseEntity.ok(productService.createProduct(request));
     }
 
     @GetMapping("/public/product/{id}")
+    @Operation(description = "Dành cho admin và user")
     public ResponseEntity<ApiResponse<ProductResponsePublic>> getProductById(@PathVariable UUID id) {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
     @PutMapping("/product/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(description = "Dành cho admin")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProductById(@PathVariable UUID id, @RequestBody CreateProductRequest request) {
         return ResponseEntity.ok(productService.updateProductById(id, request));
     }
 
     @DeleteMapping("/product/{id}")
     @PreAuthorize("hasRole('ADMIN')")
+    @Operation(description = "Dành cho admin")
     public ResponseEntity<ApiResponse<String>> deleteProductById(@PathVariable UUID id) {
         return ResponseEntity.ok(productService.deleteProductById(id));
     }
