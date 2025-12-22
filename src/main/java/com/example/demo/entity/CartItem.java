@@ -11,7 +11,7 @@ import java.util.UUID;
 @Entity
 @Data
 @Builder
-@Table(name = "cartItems")
+@Table(name = "cart_items")
 @AllArgsConstructor
 @NoArgsConstructor
 public class CartItem {
@@ -26,4 +26,6 @@ public class CartItem {
     private Product product;
     @Column(name = "quantity")
     private int quantity;
+    @Column(name = "price")
+    private Double price;
 }
