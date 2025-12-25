@@ -10,7 +10,7 @@ import java.util.UUID;
 public record OrderResponse(
         UUID id,
         List<OrderItemResponse> items,
-        Double totalPrice,
+        Long totalPrice,
         OrderStatus status,
         LocalDate createdAt,
         LocalDate updatedAt

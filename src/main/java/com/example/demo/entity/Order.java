@@ -32,9 +32,11 @@ public class Order {
     @Builder.Default
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    private Double totalPrice;
+    private Long totalPrice;
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
     private LocalDate createdAt;
     private LocalDate updatedAt;
+    @Column(unique = true)
+    private Long payosOrderCode;
 }

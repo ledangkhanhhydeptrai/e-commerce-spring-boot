@@ -10,6 +10,6 @@ import java.util.UUID;
 public class ProductResponsePublic {
     private UUID id;
     private String name;
-    private Double price;
+    private Long price;
     private StockStatus stockStatus; // IN_STOCK, LOW_STOCK, OUT_OF_STOCK
 }

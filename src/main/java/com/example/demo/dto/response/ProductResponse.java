@@ -10,6 +10,6 @@ import java.util.UUID;
 public class ProductResponse {
     private UUID id;
     private String name;
-    private Double price;
+    private Long price;
     private int quantity;
 }

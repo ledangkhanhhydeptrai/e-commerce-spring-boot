@@ -1,18 +1,14 @@
 package com.example.demo.service.Implement;
 
 import com.example.demo.Enum.OrderStatus;
-import com.example.demo.dto.request.CreateOrderItemRequest;
-import com.example.demo.dto.request.CreateOrderRequest;
 import com.example.demo.dto.response.OrderResponse;
 import com.example.demo.entity.*;
 import com.example.demo.mapper.OrderMapper;
 import com.example.demo.repository.CartRepository;
 import com.example.demo.repository.OrderRepository;
-import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.response.ApiResponse;
 import com.example.demo.service.Interface.OrderService;
-import com.example.demo.service.Interface.UserService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,14 +26,12 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final UserRepository userRepository;
     private final CartRepository cartRepository;
-    private final ProductRepository productRepository;
 
-    public OrderServiceImpl(OrderRepository orderRepository, UserRepository userRepository, ProductRepository productRepository, CartRepository cartRepository, OrderMapper orderMapper) {
+    public OrderServiceImpl(OrderRepository orderRepository, UserRepository userRepository, CartRepository cartRepository, OrderMapper orderMapper) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.cartRepository = cartRepository;
         this.orderMapper = orderMapper;
-        this.productRepository = productRepository;
     }
 
     @Override
@@ -80,13 +74,13 @@ public class OrderServiceImpl implements OrderService {
         }
 
         List<OrderItem> orderItems = new ArrayList<>();
-        double totalPrice = 0;
+        Long totalPrice = 0L;
 
         for (CartItem cartItem : cart.getCartItems()) {
             Product product = cartItem.getProduct();
             int quantity = cartItem.getQuantity();
 
-            double itemTotal = product.getPrice() * quantity;
+            Long itemTotal = product.getPrice() * quantity;
             totalPrice += itemTotal;
 
             OrderItem orderItem = OrderItem.builder()
@@ -108,12 +102,7 @@ public class OrderServiceImpl implements OrderService {
 
         orderItems.forEach(item -> item.setOrder(order));
         order.setOrderItems(orderItems);
-
         orderRepository.save(order);
-
-        cart.getCartItems().clear();
-        cartRepository.save(cart);
-
         return ApiResponse.<OrderResponse>builder()
                 .status(201)
                 .message("Create order successfully")
