@@ -26,7 +26,8 @@ public class CartController {
     }
 
     @PostMapping("/add")
-    public CartResponse addToCart(@RequestBody @Valid AddToCartRequest request) {
-        return cartService.addToCart(request);
+    public ResponseEntity<ApiResponse<CartResponse>> addToCart(@RequestBody @Valid AddToCartRequest request) {
+        System.out.println("HIT CART ADD API: " + request.productId());
+        return ResponseEntity.ok(cartService.addToCart(request));
     }
 }

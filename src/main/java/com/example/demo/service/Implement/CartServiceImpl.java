@@ -15,6 +15,7 @@ import com.example.demo.service.Interface.CartService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CartServiceImpl implements CartService {
@@ -61,28 +62,33 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    public CartResponse addToCart(AddToCartRequest request) {
+    @Transactional
+    public ApiResponse<CartResponse> addToCart(AddToCartRequest request) {
         User user = getCurrentUser();
-        Cart cart = getOrCreateCart(user);
+
+        Cart cart = cartRepository.findByUser(user)
+                .orElseGet(() -> cartRepository.save(
+                        Cart.builder().user(user).build()
+                ));
+
         Product product = productRepository.findById(request.productId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        CartItem item = cart.getCartItems()
-                .stream()
-                .filter(i -> i.getProduct().getId().equals(product.getId()))
-                .findFirst()
-                .orElse(null);
-        if (item == null) {
-            item = CartItem.builder()
-                    .cart(cart)
-                    .price(product.getPrice())
-                    .product(product)
-                    .quantity(request.quantity())
-                    .build();
-            cart.getCartItems().add(item);
-        } else {
-            item.setQuantity(item.getQuantity() + request.quantity());
-        }
+
+        CartItem item = CartItem.builder()
+                .cart(cart)
+                .product(product)
+                .quantity(request.quantity())
+                .build();
+
+        cart.getCartItems().add(item); // 🔥 cascade sẽ save item
+
         cartRepository.save(cart);
-        return cartMapper.mapToResponse(cart);
+
+        return ApiResponse.<CartResponse>builder()
+                .status(200)
+                .message("Tạo cart thành công")
+                .data(cartMapper.mapToResponse(cart))
+                .build();
     }
+
 }

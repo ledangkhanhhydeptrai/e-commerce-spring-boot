@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 @Entity
@@ -23,8 +24,14 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
-    @OneToMany(mappedBy = "order")
-    private List<OrderItem> orderItems;
+    @OneToMany(
+            mappedBy = "order",
+            cascade = CascadeType.ALL,     // 🔥 QUAN TRỌNG NHẤT
+            orphanRemoval = true
+    )
+    @Builder.Default
+    private List<OrderItem> orderItems = new ArrayList<>();
+
     private Double totalPrice;
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
