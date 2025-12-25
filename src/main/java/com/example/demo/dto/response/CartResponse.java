@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record CartResponse(
-        UUID cartId,
+        UUID id,
         List<CartItemResponse> items,
         double totalPrice
 ) {

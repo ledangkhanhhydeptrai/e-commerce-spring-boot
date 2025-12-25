@@ -3,7 +3,6 @@ package com.example.demo.mapper;
 import com.example.demo.dto.response.CartItemResponse;
 import com.example.demo.dto.response.CartResponse;
 import com.example.demo.entity.Cart;
-import com.example.demo.response.ApiResponse;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -23,11 +22,6 @@ public class CartMapper {
         double total = items.stream()
                 .mapToDouble(i -> i.price() * i.quantity())
                 .sum();
-        CartResponse cartResponse = new CartResponse(
-                cart.getId(),
-                items,
-                total
-        );
         return new CartResponse(cart.getId(), items, total);
     }
 }
