@@ -17,6 +17,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.UUID;
+
 @Service
 public class CartServiceImpl implements CartService {
 
@@ -53,12 +55,17 @@ public class CartServiceImpl implements CartService {
     @Override
     public ApiResponse<CartResponse> getMyCart() {
         User user = getCurrentUser();
-        Cart cart = cartRepository.findByUser(user).orElseGet(() -> getOrCreateCart(user));
-        return new ApiResponse<>(
-                200,
-                "Get cart successfully",
-                cartMapper.mapToResponse(cart)
-        );
+        return cartRepository.findByUser(user)
+                .map(cart -> new ApiResponse<>(
+                        200,
+                        "Get cart successfully",
+                        cartMapper.mapToResponse(cart)
+                ))
+                .orElseGet(() -> new ApiResponse<>(
+                        200,
+                        "Cart is empty",
+                        null
+                ));
     }
 
     @Override
@@ -74,13 +81,23 @@ public class CartServiceImpl implements CartService {
         Product product = productRepository.findById(request.productId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        CartItem item = CartItem.builder()
-                .cart(cart)
-                .product(product)
-                .quantity(request.quantity())
-                .build();
-
-        cart.getCartItems().add(item); // 🔥 cascade sẽ save item
+        CartItem cartItem = cart.getCartItems()
+                .stream()
+                .filter(item -> item.getProduct()
+                        .getId()
+                        .equals(product.getId()))
+                .findFirst()
+                .orElse(null);
+        if (cartItem != null) {
+            cartItem.setQuantity(cartItem.getQuantity() + request.quantity());
+        } else {
+            CartItem item = CartItem.builder()
+                    .cart(cart)
+                    .product(product)
+                    .quantity(request.quantity())
+                    .build();
+            cart.getCartItems().add(item); // 🔥 cascade sẽ save item
+        }
 
         cartRepository.save(cart);
 
@@ -91,4 +108,15 @@ public class CartServiceImpl implements CartService {
                 .build();
     }
 
+    @Override
+    public ApiResponse<String> deleteCart(UUID id) {
+        Cart cart = cartRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+        cartRepository.delete(cart);
+        return ApiResponse.<String>builder()
+                .status(200)
+                .message("Xóa giỏ hàng thành công")
+                .data(null)
+                .build();
+    }
 }

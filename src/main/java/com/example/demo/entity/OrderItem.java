@@ -25,5 +25,5 @@ public class OrderItem {
     private Order order;
     @Column(name = "quantity")
     private int quantity;
-    private Double price;
+    private Long price;
 }
