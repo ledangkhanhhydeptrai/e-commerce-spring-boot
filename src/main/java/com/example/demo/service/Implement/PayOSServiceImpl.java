@@ -2,30 +2,33 @@ package com.example.demo.service.Implement;
 
 import com.example.demo.dto.response.PAYOSResponse;
 import com.example.demo.entity.Order;
+import com.example.demo.payos.PayOSSignatureUtil;
 import com.example.demo.repository.OrderRepository;
 import com.example.demo.response.ApiResponse;
 import com.example.demo.service.Interface.PayOSService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import vn.payos.PayOS;
-import vn.payos.type.CheckoutResponseData;
-import vn.payos.type.PaymentData;
+import org.springframework.web.client.RestTemplate;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class PayOSServiceImpl implements PayOSService {
 
-    private final PayOS payOS;
-    private final OrderRepository orderRepository;
-
-    public PayOSServiceImpl(PayOS payOS, OrderRepository orderRepository) {
-        this.payOS = payOS;
-        this.orderRepository = orderRepository;
-    }
-
     @Value("${payos.client-id}")
     private String clientId;
+
+    @Value("${payos.api-key}")
+    private String apiKey;
+
+    @Value("${payos.checksum-key}")
+    private String checksumKey;
+
+    @Value("${payos.base-url}")
+    private String baseUrl;
 
     @Value("${payos.return-url}")
     private String returnUrl;
@@ -33,69 +36,99 @@ public class PayOSServiceImpl implements PayOSService {
     @Value("${payos.cancel-url}")
     private String cancelUrl;
 
-    @Value("${payos.checksum-key}")
-    private String checksumKey;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final OrderRepository orderRepository;
+
+    public PayOSServiceImpl(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
+    }
 
     @Override
     public ApiResponse<PAYOSResponse> createPayment(UUID orderId) {
-        // 1️⃣ Lấy order từ DB
+
+        // 1️⃣ Lấy order
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // 2️⃣ Chuẩn hóa amount: PayOS yêu cầu int (VNĐ / 1000 nếu cần)
-        int amount = (int) (order.getTotalPrice() / 1000);
+        // 2️⃣ Amount (PayOS >= 1000)
+        int amount = order.getTotalPrice().intValue();
+        if (amount < 1000) {
+            throw new RuntimeException("Amount must be >= 1000 VND");
+        }
 
-        // 3️⃣ Tạo orderCode kiểu long riêng cho PayOS (< 1 tỷ)
-        long orderCode = System.currentTimeMillis() % 1_000_000_000L;
-        order.setPayosOrderCode(orderCode); // lưu vào DB để callback
+        // 3️⃣ orderCode KHÔNG TRÙNG (QUAN TRỌNG)
+        long orderCode = System.currentTimeMillis();
+        order.setPayosOrderCode(orderCode);
         orderRepository.save(order);
 
-        // 4️⃣ Chuẩn hóa description tối đa 25 ký tự
-        String desc = "Order#" + order.getId();
-        if (desc.length() > 25) {
-            desc = desc.substring(0, 25);
+        // 4️⃣ Description <= 25 ký tự
+        String description = "ORDER_" + orderCode;
+        if (description.length() > 25) {
+            description = description.substring(0, 25);
         }
 
-        // 5️⃣ In debug để kiểm tra
-        System.out.println("===== DEBUG PAYOS =====");
-        System.out.println("Client ID: " + clientId);
-        System.out.println("OrderCode: " + orderCode);
-        System.out.println("Amount: " + amount);
-        System.out.println("Description: " + desc);
-        System.out.println("Return URL: " + returnUrl);
-        System.out.println("Cancel URL: " + cancelUrl);
-        System.out.println("Checksum Key: " + checksumKey);
-        System.out.println("=========================");
+        // 5️⃣ Ký signature
+        String signature = PayOSSignatureUtil.sign(
+                amount,
+                cancelUrl,
+                description,
+                orderCode,
+                returnUrl,
+                checksumKey
+        );
 
-        try {
-            // 6️⃣ Tạo PaymentData
-            PaymentData paymentData = PaymentData.builder()
-                    .orderCode(orderCode)
-                    .amount(amount)
-                    .description(desc)
-                    .returnUrl(returnUrl)
-                    .cancelUrl(cancelUrl)
-                    .build();
+        // 6️⃣ Body gửi PayOS
+        Map<String, Object> body = new HashMap<>();
+        body.put("orderCode", orderCode);
+        body.put("amount", amount);
+        body.put("description", description);
+        body.put("returnUrl", returnUrl);
+        body.put("cancelUrl", cancelUrl);
+        body.put("signature", signature);
 
-            // 7️⃣ Tạo link thanh toán
-            CheckoutResponseData response = payOS.createPaymentLink(paymentData);
+        // 7️⃣ Header
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("x-client-id", clientId);
+        headers.set("x-api-key", apiKey);
 
-            // 8️⃣ Trả về response
-            PAYOSResponse payosResponse = new PAYOSResponse(
-                    response.getCheckoutUrl(),
-                    response.getPaymentLinkId(),
-                    orderCode
-            );
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            return ApiResponse.<PAYOSResponse>builder()
-                    .status(200)
-                    .message("Tạo link thanh toán thành công")
-                    .data(payosResponse)
-                    .build();
+        // 🔥 DEBUG REQUEST
+        System.out.println("PAYOS REQUEST BODY = " + body);
 
-        } catch (Exception e) {
-            System.err.println("PayOS createPayment failed: " + e.getMessage());
-            throw new RuntimeException("Thanh toán PayOS thất bại", e);
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                baseUrl + "/v2/payment-requests",
+                entity,
+                Map.class
+        );
+
+        // 🔥 DEBUG RESPONSE
+        System.out.println("PAYOS STATUS = " + response.getStatusCode());
+        System.out.println("PAYOS RAW RESPONSE = " + response.getBody());
+
+        Map<String, Object> resBody = response.getBody();
+
+        if (resBody == null) {
+            throw new RuntimeException("PayOS response body is null");
         }
+
+        if (!resBody.containsKey("data")) {
+            throw new RuntimeException("PayOS error: " + resBody);
+        }
+
+        Map<String, Object> data = (Map<String, Object>) resBody.get("data");
+
+        PAYOSResponse payosResponse = PAYOSResponse.builder()
+                .checkoutUrl(data.get("checkoutUrl").toString())
+                .paymentLinkId(data.get("paymentLinkId").toString())
+                .orderCode(orderCode)
+                .build();
+
+        return ApiResponse.<PAYOSResponse>builder()
+                .status(200)
+                .message("Tạo link thanh toán PayOS thành công")
+                .data(payosResponse)
+                .build();
     }
 }

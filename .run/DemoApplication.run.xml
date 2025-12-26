@@ -1,12 +1,10 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="DemoApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
-    <envs>
-      <env name="PAYOS_API_KEY" value="3d02f6cf-a853-49b3-9d17-2abe2ecab66e" />
-      <env name="PAYOS_CHECKSUM_KEY" value="ea67c67fa454d039bca5307c475b3361e442b8967ba0b03703a832e119a0308f" />
-      <env name="PAYOS_CLIENT_ID" value="d383696d-2e9d-49c3-9975-abd9ca0a119b" />
-    </envs>
     <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
     <module name="demo" />
+    <selectedOptions>
+      <option name="environmentVariables" />
+    </selectedOptions>
     <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.demo.DemoApplication" />
     <extension name="coverage">
       <pattern>

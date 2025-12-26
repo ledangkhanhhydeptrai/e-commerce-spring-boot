@@ -3,13 +3,16 @@ package com.example.demo.controller;
 import com.example.demo.dto.response.PAYOSResponse;
 import com.example.demo.response.ApiResponse;
 import com.example.demo.service.Interface.PayOSService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+
 @RestController
 @RequestMapping("/api/payment")
+@Tag(name = "Payment")
 public class PAYOSController {
 
     private final PayOSService payOSService;
@@ -17,8 +20,9 @@ public class PAYOSController {
     public PAYOSController(PayOSService payOSService) {
         this.payOSService = payOSService;
     }
-    @PostMapping("{id}")
-    public ResponseEntity<ApiResponse<PAYOSResponse>> payOS(@PathVariable UUID id){
-        return ResponseEntity.ok(payOSService.createPayment(id));
+
+    @PostMapping("/{orderId}")
+    public ResponseEntity<ApiResponse<PAYOSResponse>> createPayment(@PathVariable UUID orderId) {
+        return ResponseEntity.ok(payOSService.createPayment(orderId));
     }
 }

@@ -40,8 +40,4 @@ public class CartController {
     public ResponseEntity<ApiResponse<String>> deleteCart(@PathVariable UUID id) {
         return ResponseEntity.ok(cartService.deleteCart(id));
     }
-    @PostConstruct
-    public void checkEnv() {
-        System.out.println("CLIENT_ID = " + System.getenv("PAYOS_CLIENT_ID"));
-    }
 }
