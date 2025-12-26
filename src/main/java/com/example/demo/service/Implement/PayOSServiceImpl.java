@@ -1,10 +1,8 @@
 package com.example.demo.service.Implement;
 
 import com.example.demo.Enum.OrderStatus;
-import com.example.demo.Enum.PaymentStatus;
 import com.example.demo.dto.request.PayOSCallbackRequest;
 import com.example.demo.dto.response.PAYOSResponse;
-import com.example.demo.dto.response.PayOSCallBack;
 import com.example.demo.entity.Order;
 import com.example.demo.payos.PayOSSignatureUtil;
 import com.example.demo.repository.OrderRepository;
@@ -13,13 +11,11 @@ import com.example.demo.service.Interface.PayOSService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class PayOSServiceImpl implements PayOSService {
