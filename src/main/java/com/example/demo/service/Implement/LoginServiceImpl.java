@@ -27,28 +27,25 @@ public class LoginServiceImpl implements LoginService {
     }
 
     @Override
-    public ApiResponse<LoginResponse> loginRequest(LoginRequest request) {
-        try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+    public LoginResponse login(LoginRequest request) {
 
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()
+                    )
+            );
         } catch (BadCredentialsException e) {
-            return ApiResponse.<LoginResponse>builder()
-                    .status(400)
-                    .message("Sai password hoặc username")
-                    .data(null)
-                    .build();
+            throw new BadCredentialsException("Sai password hoặc username");
         }
-        User user = userRepository.findByUsername(request.getUsername()).orElseThrow(() -> new RuntimeException("Username not found"));
-        String token = jwtUtil.generateToken(user.getUsername());
-        UserRole role = user.getRole().getName();
-        LoginResponse response = LoginResponse.builder()
-                .token(token)
-                .role(role)
-                .build();
-        return ApiResponse.<LoginResponse>builder()
-                .status(200)
-                .message("Đăng nhập thành công")
-                .data(response)
+
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("Username not found"));
+
+        return LoginResponse.builder()
+                .token(jwtUtil.generateToken(user.getUsername()))
+                .role(user.getRole().getName())
                 .build();
     }
 }

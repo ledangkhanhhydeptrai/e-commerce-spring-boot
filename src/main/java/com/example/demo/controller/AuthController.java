@@ -8,6 +8,7 @@ import com.example.demo.response.ApiResponse;
 import com.example.demo.service.Interface.LoginService;
 import com.example.demo.service.Interface.RegisterService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -32,7 +33,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@RequestBody LoginRequest request) {
-        return ResponseEntity.ok(loginService.loginRequest(request));
+    public LoginResponse login(@RequestBody LoginRequest request) {
+        return loginService.login(request);
     }
 }
