@@ -5,5 +5,5 @@ import com.example.demo.dto.response.LoginResponse;
 import com.example.demo.response.ApiResponse;
 
 public interface LoginService {
-    ApiResponse<LoginResponse> loginRequest(LoginRequest request);
+    LoginResponse login(LoginRequest request);
 }
