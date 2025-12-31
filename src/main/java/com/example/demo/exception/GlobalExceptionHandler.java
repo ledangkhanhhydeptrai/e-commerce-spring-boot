@@ -47,4 +47,14 @@ public class GlobalExceptionHandler {
                         .data(null)
                         .build());
     }
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ApiResponse<Object>> handleBusiness(BusinessException ex) {
+        return ResponseEntity
+                .status(ex.getStatus())
+                .body(ApiResponse.builder()
+                        .status(ex.getStatus().value())
+                        .message(ex.getMessage())
+                        .build());
+    }
+
 }
