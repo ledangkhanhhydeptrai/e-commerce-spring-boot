@@ -28,8 +28,16 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<RegisterResponse>> register(@RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(registerService.registerUser(request));
+    public ResponseEntity<ApiResponse<Void>> register(
+            @RequestBody RegisterRequest request) {
+
+        registerService.registerUser(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.<Void>builder()
+                        .status(200)
+                        .message("Tạo tài khoản thành công")
+                        .build());
     }
 
     @PostMapping("/login")
