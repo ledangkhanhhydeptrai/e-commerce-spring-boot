@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 
 public class UsernameAlreadyExistsException extends BusinessException {
     public UsernameAlreadyExistsException() {
-        super("Username đã tồn tại");
+        super("Username đã tồn tại", HttpStatus.BAD_REQUEST);
     }
 
     @Override
