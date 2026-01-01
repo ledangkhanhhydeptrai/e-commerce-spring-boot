@@ -3,6 +3,7 @@ package com.example.demo.dto.response;
 import com.example.demo.Enum.StockStatus;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 @Data
@@ -12,4 +13,5 @@ public class ProductResponsePublic {
     private String name;
     private Long price;
     private StockStatus stockStatus; // IN_STOCK, LOW_STOCK, OUT_OF_STOCK
+    private String image;
 }

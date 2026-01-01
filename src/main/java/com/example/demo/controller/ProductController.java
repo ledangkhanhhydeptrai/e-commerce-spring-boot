@@ -7,11 +7,15 @@ import com.example.demo.dto.response.ProductResponsePublic;
 import com.example.demo.response.ApiResponse;
 import com.example.demo.service.Interface.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -40,12 +44,19 @@ public class ProductController {
         return ResponseEntity.ok(productService.getAllProductForAdmin());
     }
 
-    @PostMapping("/product/create")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(description = "Dành cho admin")
-    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@RequestBody CreateProductRequest request) {
-        return ResponseEntity.ok(productService.createProduct(request));
+    @PostMapping(
+            value = "/product/create",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @Operation(summary = "Tạo sản phẩm (multipart)")
+    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
+            @ModelAttribute CreateProductRequest request
+    ) {
+        return ResponseEntity.ok(productService.createProduct(request, request.getFile()));
     }
+
+
+
 
     @GetMapping("/public/product/{id}")
     @Operation(description = "Dành cho admin và user")

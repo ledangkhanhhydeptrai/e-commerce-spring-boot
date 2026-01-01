@@ -28,6 +28,7 @@ public class ProductStockResponse {
                 .name(product.getName())
                 .price(product.getPrice())
                 .stockStatus(stockStatus)
+                .image(product.getFileUrl())
                 .build();
 
     }

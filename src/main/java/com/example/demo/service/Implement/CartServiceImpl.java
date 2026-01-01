@@ -95,6 +95,7 @@ public class CartServiceImpl implements CartService {
                     .cart(cart)
                     .product(product)
                     .quantity(request.quantity())
+                    .fileUrl(product.getFileUrl())
                     .build();
             cart.getCartItems().add(item); // 🔥 cascade sẽ save item
         }

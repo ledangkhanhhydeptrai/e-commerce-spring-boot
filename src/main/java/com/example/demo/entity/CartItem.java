@@ -25,6 +25,7 @@ public class CartItem {
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
-
+    @Column(name = "image", nullable = true)
+    private String fileUrl;
     private int quantity;
 }

@@ -6,6 +6,7 @@ public record CartItemResponse(
         UUID productId,
         String productName,
         double price,
-        int quantity
+        int quantity,
+        String image
 ) {
 }
