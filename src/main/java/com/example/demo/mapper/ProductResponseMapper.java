@@ -15,6 +15,7 @@ public class ProductResponseMapper {
                 .name(product.getName())
                 .price(product.getPrice())
                 .quantity(product.getQuantity())
+                .image(product.getFileUrl())
                 .build();
     }
 }

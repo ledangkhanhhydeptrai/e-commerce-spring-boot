@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.UUID;
+
 @Entity
 @Data
 @Builder
@@ -26,4 +27,6 @@ public class OrderItem {
     @Column(name = "quantity")
     private int quantity;
     private Long price;
+    @Column(name = "image")
+    private String fileUrl;
 }

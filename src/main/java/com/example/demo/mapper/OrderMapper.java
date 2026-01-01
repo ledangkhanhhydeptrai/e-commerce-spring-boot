@@ -17,7 +17,8 @@ public class OrderMapper {
                 .map(item -> new OrderItemResponse(
                         item.getProduct().getId(),
                         item.getQuantity(),
-                        item.getPrice()
+                        item.getPrice(),
+                        item.getFileUrl()
                 ))
                 .toList();
 

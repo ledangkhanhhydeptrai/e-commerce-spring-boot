@@ -10,7 +10,9 @@ import com.example.demo.repository.ProductRepository;
 import com.example.demo.response.ApiResponse;
 import com.example.demo.service.Interface.ProductService;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,11 +22,13 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductResponseMapper productMapper;
     private final ProductStockResponse productStockResponse;
+    private final CloudinaryServiceImpl cloudinaryService;
 
-    public ProductServiceImpl(ProductRepository productRepository, ProductResponseMapper productMapper, ProductStockResponse productStockResponse) {
+    public ProductServiceImpl(ProductRepository productRepository, CloudinaryServiceImpl cloudinaryService, ProductResponseMapper productMapper, ProductStockResponse productStockResponse) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.productStockResponse = productStockResponse;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @Override
@@ -54,19 +58,28 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ApiResponse<ProductResponse> createProduct(CreateProductRequest request) {
+    public ApiResponse<ProductResponse> createProduct(CreateProductRequest request, MultipartFile file) {
         Product product = Product.builder()
                 .name(request.getName())
                 .price(request.getPrice())
                 .quantity(request.getQuantity())
                 .build();
-
+        if (file != null && !file.isEmpty()) {
+            try {
+                String image = cloudinaryService.uploadFile(file);
+                product.setFileUrl(image);
+            } catch (IOException e) {
+                e.printStackTrace();
+                throw new RuntimeException("Upload file thất bại");
+            }
+        }
         Product savedProduct = productRepository.save(product);
         ProductResponse responses = ProductResponse.builder()
                 .id(savedProduct.getId())
                 .name(savedProduct.getName())
                 .price(savedProduct.getPrice())
                 .quantity(savedProduct.getQuantity())
+                .image(savedProduct.getFileUrl())
                 .build();
         return ApiResponse.<ProductResponse>builder()
                 .status(200)

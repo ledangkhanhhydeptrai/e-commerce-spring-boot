@@ -86,6 +86,7 @@ public class OrderServiceImpl implements OrderService {
             OrderItem orderItem = OrderItem.builder()
                     .product(product)
                     .quantity(quantity)
+                    .fileUrl(product.getFileUrl())
                     .price(itemTotal)
                     .build();
 

@@ -16,7 +16,8 @@ public class CartMapper {
                         i.getProduct().getId(),
                         i.getProduct().getName(),
                         i.getProduct().getPrice(),
-                        i.getQuantity()
+                        i.getQuantity(),
+                        i.getProduct().getFileUrl()
                 ))
                 .toList();
         double total = items.stream()

@@ -1,10 +1,7 @@
 package com.example.demo.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +12,8 @@ import java.util.UUID;
 @Table(name = "products")
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
+@Setter
 public class Product {
     @Id
     @GeneratedValue
@@ -27,4 +26,6 @@ public class Product {
     private int quantity;
     @Column(name = "price")
     private Long price;
+    @Column(name = "image")
+    private String fileUrl;
 }
