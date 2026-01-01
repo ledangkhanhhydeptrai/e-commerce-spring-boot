@@ -50,12 +50,10 @@ public class ProductController {
     )
     @Operation(summary = "Tạo sản phẩm (multipart)")
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
-            @ModelAttribute CreateProductRequest request
+            @ModelAttribute @RequestBody CreateProductRequest request
     ) {
         return ResponseEntity.ok(productService.createProduct(request, request.getFile()));
     }
-
-
 
 
     @GetMapping("/public/product/{id}")
