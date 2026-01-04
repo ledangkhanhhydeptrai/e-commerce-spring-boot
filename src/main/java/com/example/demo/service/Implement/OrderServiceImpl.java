@@ -9,15 +9,15 @@ import com.example.demo.repository.OrderRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.response.ApiResponse;
 import com.example.demo.service.Interface.OrderService;
+import com.example.demo.utils.OrderItemMerger;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -36,29 +36,27 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public ApiResponse<List<OrderResponse>> getAllOrders() {
+        User user = getCurrentUser();
 
-        List<OrderResponse> orders = orderRepository.findAll()
-                .stream()
-                .map(orderMapper::toOrderResponse) // Order -> OrderResponse
-                .toList();
+        Optional<Order> orders = orderRepository.findByUserAndStatus(user, OrderStatus.PENDING);
+        List<OrderResponse> orderResponses = orders.stream().map(order -> {
+            // Gom các item trùng nhau
+            List<OrderItem> mergedItems = OrderItemMerger.mergeItems(order.getOrderItems());
+            order.setOrderItems(mergedItems);
+            return orderMapper.toOrderResponse(order);
+        }).collect(Collectors.toList());
 
-        return ApiResponse.<List<OrderResponse>>builder()
-                .status(200)
-                .message("Get All Order Successfully")
-                .data(orders)
-                .build();
+        return ApiResponse.<List<OrderResponse>>builder().status(200).message("Get All Order Successfully").data(orderResponses).build();
     }
 
     private User getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
             throw new RuntimeException("Admin cannot access cart");
         }
 
-        return userRepository.findByUsername(auth.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        return userRepository.findByUsername(auth.getName()).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
     @Override
@@ -66,6 +64,7 @@ public class OrderServiceImpl implements OrderService {
     public ApiResponse<OrderResponse> addOrder() {
         User user = getCurrentUser();
 
+        // Lấy giỏ hàng của user
         Cart cart = cartRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
 
@@ -73,37 +72,59 @@ public class OrderServiceImpl implements OrderService {
             throw new RuntimeException("Cart has no items");
         }
 
-        List<OrderItem> orderItems = new ArrayList<>();
-        Long totalPrice = 0L;
+        // Lấy đơn PENDING hiện tại hoặc tạo mới
+        Order order = orderRepository.findByUserAndStatus(user, OrderStatus.PENDING)
+                .orElseGet(() -> {
+                    Order newOrder = Order.builder()
+                            .user(user)
+                            .status(OrderStatus.PENDING)
+                            .createdAt(LocalDate.now())
+                            .updatedAt(LocalDate.now())
+                            .totalPrice(0L)
+                            .build();
+                    newOrder.setOrderItems(new ArrayList<>());
+                    return newOrder;
+                });
+
+        // Gom các sản phẩm trùng nhau
+        Map<UUID, OrderItem> productMap = order.getOrderItems().stream()
+                .collect(Collectors.toMap(
+                        item -> item.getProduct().getId(),
+                        item -> item,
+                        (existing, newItem) -> existing // nếu trùng thì giữ cái cũ
+                ));
 
         for (CartItem cartItem : cart.getCartItems()) {
-            Product product = cartItem.getProduct();
-            int quantity = cartItem.getQuantity();
+            UUID productId = cartItem.getProduct().getId();
+            long itemTotal = cartItem.getProduct().getPrice() * cartItem.getQuantity();
 
-            Long itemTotal = product.getPrice() * quantity;
-            totalPrice += itemTotal;
-
-            OrderItem orderItem = OrderItem.builder()
-                    .product(product)
-                    .quantity(quantity)
-                    .fileUrl(product.getFileUrl())
-                    .price(itemTotal)
-                    .build();
-
-            orderItems.add(orderItem);
+            if (productMap.containsKey(productId)) {
+                // Nếu đã có trong order, cộng quantity và price
+                OrderItem existingItem = productMap.get(productId);
+                existingItem.setQuantity(existingItem.getQuantity() + cartItem.getQuantity());
+                existingItem.setPrice(existingItem.getPrice() + itemTotal);
+            } else {
+                // Nếu chưa có, tạo mới
+                OrderItem newItem = OrderItem.builder()
+                        .product(cartItem.getProduct())
+                        .quantity(cartItem.getQuantity())
+                        .fileUrl(cartItem.getProduct().getFileUrl())
+                        .price(itemTotal)
+                        .order(order)
+                        .build();
+                order.getOrderItems().add(newItem);
+                productMap.put(productId, newItem);
+            }
         }
 
-        Order order = Order.builder()
-                .user(user)
-                .totalPrice(totalPrice)
-                .status(OrderStatus.PENDING)
-                .createdAt(LocalDate.now())
-                .updatedAt(LocalDate.now())
-                .build();
+        // Cập nhật tổng tiền và thời gian
+        long totalPrice = order.getOrderItems().stream().mapToLong(OrderItem::getPrice).sum();
+        order.setTotalPrice(totalPrice);
+        order.setUpdatedAt(LocalDate.now());
 
-        orderItems.forEach(item -> item.setOrder(order));
-        order.setOrderItems(orderItems);
+        // Lưu order
         orderRepository.save(order);
+
         return ApiResponse.<OrderResponse>builder()
                 .status(201)
                 .message("Create order successfully")
@@ -111,14 +132,10 @@ public class OrderServiceImpl implements OrderService {
                 .build();
     }
 
+
     public ApiResponse<OrderResponse> getOrderById(UUID id) {
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không có order theo id này"));
+        Order order = orderRepository.findById(id).orElseThrow(() -> new RuntimeException("Không có order theo id này"));
         OrderResponse orderResponse = orderMapper.toOrderResponse(order);
-        return ApiResponse.<OrderResponse>builder()
-                .status(200)
-                .message("Get Order Successfully")
-                .data(orderResponse)
-                .build();
+        return ApiResponse.<OrderResponse>builder().status(200).message("Get Order Successfully").data(orderResponse).build();
     }
 }
