@@ -13,6 +13,7 @@ public class CartMapper {
         List<CartItemResponse> items = cart.getCartItems()
                 .stream()
                 .map(i -> new CartItemResponse(
+                        i.getId(),
                         i.getProduct().getId(),
                         i.getProduct().getName(),
                         i.getProduct().getPrice(),

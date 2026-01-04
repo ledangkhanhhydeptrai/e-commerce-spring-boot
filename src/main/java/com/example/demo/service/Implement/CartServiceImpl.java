@@ -6,12 +6,15 @@ import com.example.demo.entity.Cart;
 import com.example.demo.entity.CartItem;
 import com.example.demo.entity.Product;
 import com.example.demo.entity.User;
+import com.example.demo.exception.BusinessException;
 import com.example.demo.mapper.CartMapper;
+import com.example.demo.repository.CartItemRepository;
 import com.example.demo.repository.CartRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.response.ApiResponse;
 import com.example.demo.service.Interface.CartService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -23,12 +26,14 @@ import java.util.UUID;
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
+    private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final CartMapper cartMapper;
 
-    public CartServiceImpl(CartRepository cartRepository, ProductRepository productRepository, UserRepository userRepository, CartMapper cartMapper) {
+    public CartServiceImpl(CartRepository cartRepository, CartItemRepository cartItemRepository, ProductRepository productRepository, UserRepository userRepository, CartMapper cartMapper) {
         this.cartRepository = cartRepository;
+        this.cartItemRepository = cartItemRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.cartMapper = cartMapper;
@@ -106,6 +111,25 @@ public class CartServiceImpl implements CartService {
                 .status(200)
                 .message("Tạo cart thành công")
                 .data(cartMapper.mapToResponse(cart))
+                .build();
+    }
+
+    @Override
+    public ApiResponse<CartResponse> updateQuantity(UUID cartItemId, int quantity) {
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new BusinessException("Cart item không tồn tại", HttpStatus.NOT_FOUND));
+        if (quantity == 0) {
+            cartItemRepository.delete(cartItem);
+        } else {
+            cartItem.setQuantity(quantity);
+            cartItemRepository.save(cartItem);
+        }
+        Cart cart = cartItem.getCart();
+        CartResponse cartResponse = cartMapper.mapToResponse(cart);
+        return ApiResponse.<CartResponse>builder()
+                .status(200)
+                .message("Cập nhật thành công")
+                .data(cartResponse)
                 .build();
     }
 

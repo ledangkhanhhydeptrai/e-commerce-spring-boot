@@ -10,4 +10,5 @@ public interface CartService {
     ApiResponse<CartResponse> addToCart(AddToCartRequest request);
     ApiResponse<CartResponse> getMyCart();
     ApiResponse<String> deleteCart(UUID id);
+    ApiResponse<CartResponse> updateQuantity(UUID cartItemId, int quantity);
 }
