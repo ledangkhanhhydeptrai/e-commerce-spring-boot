@@ -19,25 +19,37 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Order {
+
     @Id
     @GeneratedValue
     private UUID id;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
     @OneToMany(
             mappedBy = "order",
-            cascade = CascadeType.ALL,     // 🔥 QUAN TRỌNG NHẤT
+            cascade = CascadeType.ALL,
             orphanRemoval = true
     )
     @Builder.Default
     private List<OrderItem> orderItems = new ArrayList<>();
 
     private Long totalPrice;
+
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
+
     private LocalDate createdAt;
     private LocalDate updatedAt;
+
     @Column(unique = true)
     private Long payosOrderCode;
+
+    // 🔥🔥🔥 THÊM
+    private String checkoutUrl;
+
+    private String paymentLinkId;
 }
+

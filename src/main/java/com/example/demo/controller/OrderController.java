@@ -26,10 +26,10 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getAllOrders());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<OrderResponse>> getOrderById(@PathVariable UUID id) {
-        return ResponseEntity.ok(orderService.getOrderById(id));
-    }
+//    @GetMapping("/{id}")
+//    public ResponseEntity<ApiResponse<OrderResponse>> getOrderById(@PathVariable UUID id) {
+//        return ResponseEntity.ok(orderService.getOrderById(id));
+//    }
 
     @PostMapping
     public ResponseEntity<ApiResponse<OrderResponse>> createOrder() {
