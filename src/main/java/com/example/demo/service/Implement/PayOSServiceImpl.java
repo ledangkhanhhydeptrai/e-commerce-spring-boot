@@ -3,6 +3,7 @@ package com.example.demo.service.Implement;
 import com.example.demo.Enum.OrderStatus;
 import com.example.demo.dto.request.PayOSCallbackRequest;
 import com.example.demo.dto.response.PAYOSResponse;
+import com.example.demo.dto.response.PaymentStatusResponse;
 import com.example.demo.entity.Order;
 import com.example.demo.payos.PayOSSignatureUtil;
 import com.example.demo.repository.OrderRepository;
@@ -15,6 +16,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -45,94 +47,126 @@ public class PayOSServiceImpl implements PayOSService {
         this.orderRepository = orderRepository;
     }
 
+
     @Override
     public ApiResponse<PAYOSResponse> createPayment(UUID orderId) {
-
         // 1️⃣ Lấy order
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+        Optional<Order> optionalOrder = orderRepository.findById(orderId);
+        if (optionalOrder.isEmpty()) {
+            return ApiResponse.<PAYOSResponse>builder()
+                    .status(404)
+                    .message("Order not found")
+                    .data(null)
+                    .build();
+        }
 
-        // 2️⃣ Amount (PayOS >= 1000)
+        Order order = optionalOrder.get();
+
+        // 2️⃣ Thêm orderId vào return/cancel URL
+        String cancelUrlWithOrderId = cancelUrl + "?orderId=" + order.getId() + "&status=CANCELLED";
+        String returnUrlWithOrderId = returnUrl + "?orderId=" + order.getId() + "&status=PAID";
+
+        // 3️⃣ Amount >= 1000
         int amount = order.getTotalPrice().intValue();
         if (amount < 1000) {
-            throw new RuntimeException("Amount must be >= 1000 VND");
+            return ApiResponse.<PAYOSResponse>builder()
+                    .status(400)
+                    .message("Amount must be >= 1000 VND")
+                    .data(null)
+                    .build();
         }
 
-        // 3️⃣ orderCode KHÔNG TRÙNG (QUAN TRỌNG)
-        long orderCode = System.currentTimeMillis();
-        order.setPayosOrderCode(orderCode);
-        orderRepository.save(order);
+        try {
+            // 4️⃣ Tạo orderCode
+            long orderCode = System.currentTimeMillis();
+            order.setPayosOrderCode(orderCode);
+            orderRepository.save(order);
 
-        // 4️⃣ Description <= 25 ký tự
-        String description = "ORDER_" + orderCode;
-        if (description.length() > 25) {
-            description = description.substring(0, 25);
+            // 5️⃣ Description
+            String description = "ORDER_" + orderCode;
+            if (description.length() > 25) description = description.substring(0, 25);
+
+            // 6️⃣ Ký signature với URL đã thêm orderId
+            String signature = PayOSSignatureUtil.sign(
+                    amount, cancelUrlWithOrderId, description, orderCode, returnUrlWithOrderId, checksumKey
+            );
+
+            // 7️⃣ Body gửi PayOS
+            Map<String, Object> body = new HashMap<>();
+            body.put("orderCode", orderCode);
+            body.put("amount", amount);
+            body.put("description", description);
+            body.put("returnUrl", returnUrlWithOrderId);
+            body.put("cancelUrl", cancelUrlWithOrderId);
+            body.put("signature", signature);
+
+            // 8️⃣ Header
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-client-id", clientId);
+            headers.set("x-api-key", apiKey);
+
+            System.out.println("Calling PayOS URL: " + baseUrl + "/v2/payment-requests");
+            System.out.println("Headers: " + headers);
+            System.out.println("Body: " + body);
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    baseUrl + "/v2/payment-requests",
+                    new HttpEntity<>(body, headers),
+                    Map.class
+            );
+
+            // 9️⃣ Check response an toàn
+            Map<String, Object> resBody = response.getBody();
+            if (resBody == null) {
+                return ApiResponse.<PAYOSResponse>builder()
+                        .status(502)
+                        .message("PayOS service error: response body null")
+                        .data(null)
+                        .build();
+            }
+
+            Object dataObj = resBody.get("data");
+            if (dataObj == null) {
+                return ApiResponse.<PAYOSResponse>builder()
+                        .status(502)
+                        .message("PayOS service error: data field is null, raw response: " + resBody)
+                        .data(null)
+                        .build();
+            }
+
+            Map<String, Object> data = (Map<String, Object>) dataObj;
+            String checkoutUrl = data.get("checkoutUrl").toString();
+            String paymentLinkId = data.get("paymentLinkId").toString();
+
+            // 10️⃣ Lưu vào order
+            order.setCheckoutUrl(checkoutUrl);
+            order.setPaymentLinkId(paymentLinkId);
+            orderRepository.save(order);
+
+            // 11️⃣ Trả response cho FE
+            PAYOSResponse payosResponse = PAYOSResponse.builder()
+                    .checkoutUrl(checkoutUrl)
+                    .paymentLinkId(paymentLinkId)
+                    .orderCode(orderCode)
+                    .build();
+
+            return ApiResponse.<PAYOSResponse>builder()
+                    .status(200)
+                    .message("Tạo link thanh toán PayOS thành công")
+                    .data(payosResponse)
+                    .build();
+
+        } catch (Exception e) {
+            return ApiResponse.<PAYOSResponse>builder()
+                    .status(502)
+                    .message("PayOS service error: " + e.getMessage())
+                    .data(null)
+                    .build();
         }
-
-        // 5️⃣ Ký signature
-        String signature = PayOSSignatureUtil.sign(
-                amount,
-                cancelUrl,
-                description,
-                orderCode,
-                returnUrl,
-                checksumKey
-        );
-
-        // 6️⃣ Body gửi PayOS
-        Map<String, Object> body = new HashMap<>();
-        body.put("orderCode", orderCode);
-        body.put("amount", amount);
-        body.put("description", description);
-        body.put("returnUrl", returnUrl);
-        body.put("cancelUrl", cancelUrl);
-        body.put("signature", signature);
-
-        // 7️⃣ Header
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-client-id", clientId);
-        headers.set("x-api-key", apiKey);
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-
-        // 🔥 DEBUG REQUEST
-        System.out.println("PAYOS REQUEST BODY = " + body);
-
-        ResponseEntity<Map> response = restTemplate.postForEntity(
-                baseUrl + "/v2/payment-requests",
-                entity,
-                Map.class
-        );
-
-        // 🔥 DEBUG RESPONSE
-        System.out.println("PAYOS STATUS = " + response.getStatusCode());
-        System.out.println("PAYOS RAW RESPONSE = " + response.getBody());
-
-        Map<String, Object> resBody = response.getBody();
-
-        if (resBody == null) {
-            throw new RuntimeException("PayOS response body is null");
-        }
-
-        if (!resBody.containsKey("data")) {
-            throw new RuntimeException("PayOS error: " + resBody);
-        }
-
-        Map<String, Object> data = (Map<String, Object>) resBody.get("data");
-
-        PAYOSResponse payosResponse = PAYOSResponse.builder()
-                .checkoutUrl(data.get("checkoutUrl").toString())
-                .paymentLinkId(data.get("paymentLinkId").toString())
-                .orderCode(orderCode)
-                .build();
-
-        return ApiResponse.<PAYOSResponse>builder()
-                .status(200)
-                .message("Tạo link thanh toán PayOS thành công")
-                .data(payosResponse)
-                .build();
     }
+
+
 
     @Override
     public ApiResponse<String> confirmPayment(PayOSCallbackRequest callback) {
@@ -179,4 +213,53 @@ public class PayOSServiceImpl implements PayOSService {
                 .data(null)
                 .build();
     }
+
+    @Override
+    public ApiResponse<PaymentStatusResponse> getPaymentByOrderId(UUID orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        PaymentStatusResponse response = PaymentStatusResponse.builder()
+                .orderCode(order.getPayosOrderCode())
+                .checkoutUrl(order.getCheckoutUrl()) // ⚠️ xem lưu ở đâu
+                .paymentLinkId(order.getPaymentLinkId())
+                .orderStatus(order.getStatus())
+                .build();
+
+        return ApiResponse.<PaymentStatusResponse>builder()
+                .status(200)
+                .message("Get payment status success")
+                .data(response)
+                .build();
+    }
+    @Override
+    public ApiResponse<Void> cancelPayment(UUID orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // Không cho cancel khi đã trả tiền
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            throw new RuntimeException("Order already paid, cannot cancel");
+        }
+
+        // Nếu đã cancel rồi thì thôi
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            return ApiResponse.<Void>builder()
+                    .status(200)
+                    .message("Order already cancelled")
+                    .build();
+        }
+
+        // Update trạng thái
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+
+        return ApiResponse.<Void>builder()
+                .status(200)
+                .message("Cancel payment success")
+                .build();
+    }
+
 }
