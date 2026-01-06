@@ -5,6 +5,7 @@ import com.example.demo.dto.request.PayOSCallbackRequest;
 import com.example.demo.dto.response.PAYOSResponse;
 import com.example.demo.dto.response.PayOSCallBack;
 import com.example.demo.dto.response.PaymentStatusResponse;
+import com.example.demo.payment.PaymentProps;
 import com.example.demo.response.ApiResponse;
 
 import java.util.Map;
@@ -14,5 +15,6 @@ public interface PayOSService {
     ApiResponse<PAYOSResponse> createPayment(UUID orderId);
     ApiResponse<String> confirmPayment(PayOSCallbackRequest callback);
     ApiResponse<PaymentStatusResponse> getPaymentByOrderId(UUID orderId);
-    ApiResponse<Void> cancelPayment(UUID orderId);
+    ApiResponse<PaymentProps> cancelPayment(String orderId, String status);
+    ApiResponse<Void> markPaymentSuccess(String orderId);
 }
