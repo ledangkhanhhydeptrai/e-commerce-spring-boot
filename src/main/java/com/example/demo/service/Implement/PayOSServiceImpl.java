@@ -5,6 +5,7 @@ import com.example.demo.dto.request.PayOSCallbackRequest;
 import com.example.demo.dto.response.PAYOSResponse;
 import com.example.demo.dto.response.PaymentStatusResponse;
 import com.example.demo.entity.Order;
+import com.example.demo.payment.PaymentProps;
 import com.example.demo.payos.PayOSSignatureUtil;
 import com.example.demo.repository.OrderRepository;
 import com.example.demo.response.ApiResponse;
@@ -63,8 +64,11 @@ public class PayOSServiceImpl implements PayOSService {
         Order order = optionalOrder.get();
 
         // 2️⃣ Thêm orderId vào return/cancel URL
-        String cancelUrlWithOrderId = cancelUrl + "?orderId=" + order.getId() + "&status=CANCELLED";
-        String returnUrlWithOrderId = returnUrl + "?orderId=" + order.getId() + "&status=PAID";
+        String cancelUrlWithOrderId =
+                cancelUrl + "/" + order.getId() + "?status=CANCELLED";
+
+        String returnUrlWithOrderId =
+                returnUrl + "/" + order.getId() + "?status=PAID";
 
         // 3️⃣ Amount >= 1000
         int amount = order.getTotalPrice().intValue();
@@ -167,7 +171,6 @@ public class PayOSServiceImpl implements PayOSService {
     }
 
 
-
     @Override
     public ApiResponse<String> confirmPayment(PayOSCallbackRequest callback) {
         // 1. Lấy dữ liệu từ callback
@@ -233,32 +236,113 @@ public class PayOSServiceImpl implements PayOSService {
                 .data(response)
                 .build();
     }
+
     @Override
-    public ApiResponse<Void> cancelPayment(UUID orderId) {
+    public ApiResponse<PaymentProps> cancelPayment(String orderId, String status) {
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        // Không cho cancel khi đã trả tiền
-        if (order.getStatus() == OrderStatus.COMPLETED) {
-            throw new RuntimeException("Order already paid, cannot cancel");
+        if (orderId == null || orderId.isBlank()) {
+            return ApiResponse.<PaymentProps>builder()
+                    .status(400)
+                    .message("❌ orderId is required")
+                    .data(null)
+                    .build();
         }
 
-        // Nếu đã cancel rồi thì thôi
+        // 1️⃣ Tìm order theo UUID hoặc payosOrderCode
+        Order order = null;
+
+        try {
+            UUID uuid = UUID.fromString(orderId);
+            order = orderRepository.findById(uuid).orElse(null);
+        } catch (IllegalArgumentException ignored) {
+        }
+
+        if (order == null) {
+            try {
+                Long code = Long.parseLong(orderId);
+                order = orderRepository.findByPayosOrderCode(code).orElse(null);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        if (order == null) {
+            return ApiResponse.<PaymentProps>builder()
+                    .status(404)
+                    .message("❌ Order not found")
+                    .data(null)
+                    .build();
+        }
+
+        // 2️⃣ Update status theo nghiệp vụ
+        if ("CANCELLED".equalsIgnoreCase(status)) {
+            order.setStatus(OrderStatus.CANCELLED);
+        } else if ("COMPLETED".equalsIgnoreCase(status)) {
+            order.setStatus(OrderStatus.COMPLETED);
+        } else {
+            order.setStatus(OrderStatus.PENDING);
+        }
+
+        orderRepository.save(order);
+
+        // 3️⃣ Build PaymentProps
+        PaymentProps result = new PaymentProps();
+        result.setOrderCode(order.getPayosOrderCode().toString());
+        result.setPaymentStatus(status);
+        result.setCheckoutUrl(order.getCheckoutUrl());
+        result.setPaymentLinkId(order.getPaymentLinkId());
+        result.setOrderStatus(order.getStatus().name());
+
+        return ApiResponse.<PaymentProps>builder()
+                .status(200)
+                .message("✅ Cancel success")
+                .data(result)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<Void> markPaymentSuccess(String orderId) {
+
+        if (orderId == null || orderId.isBlank()) {
+            return ApiResponse.<Void>builder()
+                    .status(400)
+                    .message("Missing orderId")
+                    .build();
+        }
+
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(orderId);
+        } catch (IllegalArgumentException e) {
+            return ApiResponse.<Void>builder()
+                    .status(400)
+                    .message("Invalid orderId")
+                    .build();
+        }
+
+        Order order = orderRepository.findById(uuid)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        // ❗ Nghiệp vụ chặt
         if (order.getStatus() == OrderStatus.CANCELLED) {
             return ApiResponse.<Void>builder()
-                    .status(200)
+                    .status(400)
                     .message("Order already cancelled")
                     .build();
         }
 
-        // Update trạng thái
-        order.setStatus(OrderStatus.CANCELLED);
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            return ApiResponse.<Void>builder()
+                    .status(200)
+                    .message("Order already completed")
+                    .build();
+        }
+
+        order.setStatus(OrderStatus.COMPLETED);
         orderRepository.save(order);
 
         return ApiResponse.<Void>builder()
                 .status(200)
-                .message("Cancel payment success")
+                .message("Payment success")
                 .build();
     }
 

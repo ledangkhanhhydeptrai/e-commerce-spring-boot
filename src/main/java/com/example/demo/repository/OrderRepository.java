@@ -12,5 +12,5 @@ import java.util.UUID;
 public interface OrderRepository extends JpaRepository<Order, UUID> {
     Optional<Order> findByPayosOrderCode(long orderCode);
     Optional<Order> findByUserAndStatus(User user, OrderStatus status);
-
+    Optional<Order> findByPayosOrderCode(Long payosOrderCode);
 }
