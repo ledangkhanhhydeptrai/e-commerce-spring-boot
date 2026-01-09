@@ -16,4 +16,5 @@ public interface ProductService {
     ApiResponse<ProductResponsePublic> getProductById(UUID id);
     ApiResponse<ProductResponse> updateProductById(UUID id, CreateProductRequest request);
     ApiResponse<String> deleteProductById(UUID id);
+    ApiResponse<ProductResponse> getProductAdminById(UUID id);
 }

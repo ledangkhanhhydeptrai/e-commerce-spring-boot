@@ -99,7 +99,22 @@ public class ProductServiceImpl implements ProductService {
                 .data(productResponsePublic)
                 .build();
     }
-
+    @Override
+    public ApiResponse<ProductResponse> getProductAdminById(UUID id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không có id của sản phẩm này"));
+        ProductResponse productResponse = ProductResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .price(product.getPrice())
+                .image(product.getFileUrl())
+                .build();
+        return ApiResponse.<ProductResponse>builder()
+                .status(200)
+                .message("Get the product successfully")
+                .data(productResponse)
+                .build();
+    }
     @Override
     public ApiResponse<ProductResponse> updateProductById(UUID id, CreateProductRequest request) {
         Product product = productRepository.findById(id)

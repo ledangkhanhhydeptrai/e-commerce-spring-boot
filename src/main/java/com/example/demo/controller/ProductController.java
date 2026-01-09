@@ -62,6 +62,12 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductById(id));
     }
 
+    @GetMapping("/product/{id}")
+    @Operation(description = "Dành cho admin")
+    public ResponseEntity<ApiResponse<ProductResponse>> getProductAdminById(@PathVariable UUID id) {
+        return ResponseEntity.ok(productService.getProductAdminById(id));
+    }
+
     @PutMapping("/product/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(description = "Dành cho admin")
