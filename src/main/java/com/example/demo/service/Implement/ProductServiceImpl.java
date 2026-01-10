@@ -99,6 +99,7 @@ public class ProductServiceImpl implements ProductService {
                 .data(productResponsePublic)
                 .build();
     }
+
     @Override
     public ApiResponse<ProductResponse> getProductAdminById(UUID id) {
         Product product = productRepository.findById(id)
@@ -116,10 +117,20 @@ public class ProductServiceImpl implements ProductService {
                 .data(productResponse)
                 .build();
     }
+
     @Override
-    public ApiResponse<ProductResponse> updateProductById(UUID id, CreateProductRequest request) {
+    public ApiResponse<ProductResponse> updateProductById(UUID id, CreateProductRequest request, MultipartFile file) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không có id của sản phẩm này"));
+        if (file != null && !file.isEmpty()) {
+            try {
+                String image = cloudinaryService.uploadFile(file);
+                product.setFileUrl(image);
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new RuntimeException("Upload file thất bại");
+            }
+        }
         product.setName(request.getName());
         product.setPrice(request.getPrice());
         product.setQuantity(request.getQuantity());

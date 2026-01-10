@@ -1,10 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.Enum.OrderStatus;
 import com.example.demo.dto.response.PaymentStatusResponse;
-import com.example.demo.entity.Order;
-import com.example.demo.payment.PaymentProps;
-import com.example.demo.repository.OrderRepository;
 import com.example.demo.response.ApiResponse;
 import com.example.demo.service.Interface.PayOSService;
 import io.swagger.v3.oas.annotations.tags.Tag;

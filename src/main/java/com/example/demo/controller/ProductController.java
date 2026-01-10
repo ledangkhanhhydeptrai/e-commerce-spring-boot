@@ -68,11 +68,11 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProductAdminById(id));
     }
 
-    @PutMapping("/product/{id}")
+    @PutMapping(value = "/product/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(description = "Dành cho admin")
-    public ResponseEntity<ApiResponse<ProductResponse>> updateProductById(@PathVariable UUID id, @RequestBody CreateProductRequest request) {
-        return ResponseEntity.ok(productService.updateProductById(id, request));
+    public ResponseEntity<ApiResponse<ProductResponse>> updateProductById(@PathVariable UUID id, @ModelAttribute @RequestBody CreateProductRequest request) {
+        return ResponseEntity.ok(productService.updateProductById(id, request, request.getFile()));
     }
 
     @DeleteMapping("/product/{id}")

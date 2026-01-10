@@ -1,11 +1,7 @@
 package com.example.demo.service.Interface;
 
-import com.example.demo.Enum.PaymentStatus;
-import com.example.demo.dto.request.PayOSCallbackRequest;
 import com.example.demo.dto.response.PAYOSResponse;
-import com.example.demo.dto.response.PayOSCallBack;
 import com.example.demo.dto.response.PaymentStatusResponse;
-import com.example.demo.payment.PaymentProps;
 import com.example.demo.response.ApiResponse;
 
 import java.util.Map;
