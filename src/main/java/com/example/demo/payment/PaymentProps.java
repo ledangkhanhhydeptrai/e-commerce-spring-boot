@@ -15,6 +15,4 @@ public class PaymentProps {
     private String orderCode;
     private String paymentStatus;
     private String orderStatus;
-
-
 }

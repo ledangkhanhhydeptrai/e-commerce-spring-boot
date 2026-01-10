@@ -13,8 +13,7 @@ import java.util.UUID;
 
 public interface PayOSService {
     ApiResponse<PAYOSResponse> createPayment(UUID orderId);
-    ApiResponse<String> confirmPayment(PayOSCallbackRequest callback);
     ApiResponse<PaymentStatusResponse> getPaymentByOrderId(UUID orderId);
-    ApiResponse<PaymentProps> cancelPayment(String orderId, String status);
+    ApiResponse<PaymentStatusResponse> cancelPayment(String orderId, String status);
     ApiResponse<Void> markPaymentSuccess(String orderId);
 }

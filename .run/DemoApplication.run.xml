@@ -4,12 +4,15 @@
       <env name="CLOUD_API_KEY" value="374849278972435" />
       <env name="CLOUD_API_SECRET" value="k7gRpQkf1Xc87ZQPNhmshB17l6I" />
       <env name="CLOUD_NAME" value="dnmk3xqy0" />
+      <env name="JWT_EXPIRATION" value="3600000" />
+      <env name="JWT_REFRESH_EXPIRATION" value="86400000" />
       <env name="JWT_SECRET" value="12345678901234567890123456789012" />
       <env name="PAYOS_API_KEY" value="3ebea8da-6ed0-4404-aae2-5dac122f8066" />
       <env name="PAYOS_CANCEL_URL" value="http://localhost:4000/payment" />
       <env name="PAYOS_CHECKSUM_KEY" value="6c24bfcae2f18a27fb4324a26857992228d4b7bbe711537efc1a325d442e974b" />
       <env name="PAYOS_CLIENT_ID" value="f5ff9903-6761-4f28-a374-95e860def4fd" />
       <env name="PAYOS_RETURN_URL" value="http://localhost:4000/payment" />
+      <env name="PAYOS_BASE_URL" value="https://api-merchant.payos.vn" />
     </envs>
     <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
     <module name="demo" />
