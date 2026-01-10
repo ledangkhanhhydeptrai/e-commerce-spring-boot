@@ -14,7 +14,7 @@ public interface ProductService {
     ApiResponse<List<ProductResponse>> getAllProductForAdmin();
     ApiResponse<ProductResponse> createProduct(CreateProductRequest request, MultipartFile file);
     ApiResponse<ProductResponsePublic> getProductById(UUID id);
-    ApiResponse<ProductResponse> updateProductById(UUID id, CreateProductRequest request);
+    ApiResponse<ProductResponse> updateProductById(UUID id, CreateProductRequest request, MultipartFile file);
     ApiResponse<String> deleteProductById(UUID id);
     ApiResponse<ProductResponse> getProductAdminById(UUID id);
 }
