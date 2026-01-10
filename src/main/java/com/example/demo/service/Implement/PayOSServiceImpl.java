@@ -3,9 +3,9 @@ package com.example.demo.service.Implement;
 import com.example.demo.Enum.OrderStatus;
 import com.example.demo.dto.request.PayOSCallbackRequest;
 import com.example.demo.dto.response.PAYOSResponse;
+
 import com.example.demo.dto.response.PaymentStatusResponse;
 import com.example.demo.entity.Order;
-import com.example.demo.payment.PaymentProps;
 import com.example.demo.payos.PayOSSignatureUtil;
 import com.example.demo.repository.OrderRepository;
 import com.example.demo.response.ApiResponse;
@@ -171,51 +171,51 @@ public class PayOSServiceImpl implements PayOSService {
     }
 
 
-    @Override
-    public ApiResponse<String> confirmPayment(PayOSCallbackRequest callback) {
-        // 1. Lấy dữ liệu từ callback
-        long orderCode = callback.getOrderCode();
-        String status = callback.getStatus();
-        String signature = callback.getSignature();
-
-        // 2. Lấy order từ DB
-        Order order = orderRepository.findByPayosOrderCode(orderCode)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        // 3. Tạo rawData để verify signature theo PayOS (xếp key alphabet, bỏ signature)
-        String rawData = "amount=" + callback.getAmount() +
-                "&description=" + callback.getDescription() +
-                "&orderCode=" + callback.getOrderCode() +
-                "&status=" + callback.getStatus();
-
-        System.out.println("---- PAYOS CALLBACK DEBUG ----");
-        System.out.println("RAW Data for signature: " + rawData);
-        System.out.println("Received signature: " + signature);
-
-        // 4. Verify signature
-        boolean isValid = PayOSSignatureUtil.verifyCallback(rawData, checksumKey, signature);
-        if (!isValid) {
-            throw new RuntimeException("Invalid signature");
-        }
-
-        // 5. Cập nhật trạng thái order theo nghiệp vụ
-        if ("PAID".equalsIgnoreCase(status)) {
-            order.setStatus(OrderStatus.COMPLETED); // chỉ khi PAID mới COMPLETED
-        } else if ("CANCELLED".equalsIgnoreCase(status) || "FAILED".equalsIgnoreCase(status)) {
-            order.setStatus(OrderStatus.CANCELLED);
-        } else {
-            order.setStatus(OrderStatus.PENDING); // PENDING hoặc trạng thái khác
-        }
-
-        orderRepository.save(order);
-
-        // 6. Trả response
-        return ApiResponse.<String>builder()
-                .status(200)
-                .message("Payment confirmed")
-                .data(null)
-                .build();
-    }
+//    @Override
+//    public ApiResponse<String> confirmPayment(PayOSCallbackRequest callback) {
+//        // 1. Lấy dữ liệu từ callback
+//        long orderCode = callback.getOrderCode();
+//        String status = callback.getStatus();
+//        String signature = callback.getSignature();
+//
+//        // 2. Lấy order từ DB
+//        Order order = orderRepository.findByPayosOrderCode(orderCode)
+//                .orElseThrow(() -> new RuntimeException("Order not found"));
+//
+//        // 3. Tạo rawData để verify signature theo PayOS (xếp key alphabet, bỏ signature)
+//        String rawData = "amount=" + callback.getAmount() +
+//                "&description=" + callback.getDescription() +
+//                "&orderCode=" + callback.getOrderCode() +
+//                "&status=" + callback.getStatus();
+//
+//        System.out.println("---- PAYOS CALLBACK DEBUG ----");
+//        System.out.println("RAW Data for signature: " + rawData);
+//        System.out.println("Received signature: " + signature);
+//
+//        // 4. Verify signature
+//        boolean isValid = PayOSSignatureUtil.verifyCallback(rawData, checksumKey, signature);
+//        if (!isValid) {
+//            throw new RuntimeException("Invalid signature");
+//        }
+//
+//        // 5. Cập nhật trạng thái order theo nghiệp vụ
+//        if ("PAID".equalsIgnoreCase(status)) {
+//            order.setStatus(OrderStatus.COMPLETED); // chỉ khi PAID mới COMPLETED
+//        } else if ("CANCELLED".equalsIgnoreCase(status) || "FAILED".equalsIgnoreCase(status)) {
+//            order.setStatus(OrderStatus.CANCELLED);
+//        } else {
+//            order.setStatus(OrderStatus.PENDING); // PENDING hoặc trạng thái khác
+//        }
+//
+//        orderRepository.save(order);
+//
+//        // 6. Trả response
+//        return ApiResponse.<String>builder()
+//                .status(200)
+//                .message("Payment confirmed")
+//                .data(null)
+//                .build();
+//    }
 
     @Override
     public ApiResponse<PaymentStatusResponse> getPaymentByOrderId(UUID orderId) {
@@ -238,10 +238,10 @@ public class PayOSServiceImpl implements PayOSService {
     }
 
     @Override
-    public ApiResponse<PaymentProps> cancelPayment(String orderId, String status) {
+    public ApiResponse<PaymentStatusResponse> cancelPayment(String orderId, String status) {
 
         if (orderId == null || orderId.isBlank()) {
-            return ApiResponse.<PaymentProps>builder()
+            return ApiResponse.<PaymentStatusResponse>builder()
                     .status(400)
                     .message("❌ orderId is required")
                     .data(null)
@@ -266,7 +266,7 @@ public class PayOSServiceImpl implements PayOSService {
         }
 
         if (order == null) {
-            return ApiResponse.<PaymentProps>builder()
+            return ApiResponse.<PaymentStatusResponse>builder()
                     .status(404)
                     .message("❌ Order not found")
                     .data(null)
@@ -284,15 +284,15 @@ public class PayOSServiceImpl implements PayOSService {
 
         orderRepository.save(order);
 
-        // 3️⃣ Build PaymentProps
-        PaymentProps result = new PaymentProps();
-        result.setOrderCode(order.getPayosOrderCode().toString());
+        // 3️⃣ Build PaymentStatusResponse
+        PaymentStatusResponse result = new PaymentStatusResponse();
+        result.setOrderCode(order.getPayosOrderCode());
         result.setPaymentStatus(status);
         result.setCheckoutUrl(order.getCheckoutUrl());
         result.setPaymentLinkId(order.getPaymentLinkId());
-        result.setOrderStatus(order.getStatus().name());
+        result.setOrderStatus(order.getStatus());
 
-        return ApiResponse.<PaymentProps>builder()
+        return ApiResponse.<PaymentStatusResponse>builder()
                 .status(200)
                 .message("✅ Cancel success")
                 .data(result)

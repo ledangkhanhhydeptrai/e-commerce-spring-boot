@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.Enum.OrderStatus;
+import com.example.demo.dto.response.PaymentStatusResponse;
 import com.example.demo.entity.Order;
 import com.example.demo.payment.PaymentProps;
 import com.example.demo.repository.OrderRepository;
@@ -48,7 +49,7 @@ public class PAYOSController {
     // GET /api/payment/cancel-order?orderId=...&status=...
     // -------------------------------
     @PostMapping("/payment/cancel-order")
-    public ResponseEntity<ApiResponse<PaymentProps>> cancelPaymentGet(
+    public ResponseEntity<ApiResponse<PaymentStatusResponse>> cancelPaymentGet(
             @RequestParam String orderId,
             @RequestParam(defaultValue = "CANCELLED") String status
     ) {
