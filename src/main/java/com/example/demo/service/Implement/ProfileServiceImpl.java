@@ -1,5 +1,6 @@
 package com.example.demo.service.Implement;
 
+import com.example.demo.dto.request.CreateProfileRequest;
 import com.example.demo.dto.response.ProfileResponse;
 import com.example.demo.entity.Profile;
 import com.example.demo.entity.User;
@@ -45,14 +46,45 @@ public class ProfileServiceImpl implements ProfileService {
         }
 
         ProfileResponse response = ProfileResponse.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
+                .id(profile.getId())
+                .username(profile.getUsername())
+                .email(profile.getEmail())
                 .build();
 
         return ApiResponse.<ProfileResponse>builder()
                 .status(200)
                 .message("Get profile successfully")
+                .data(response)
+                .build();
+    }
+
+    @Override
+    public ApiResponse<ProfileResponse> updateUserProfile(CreateProfileRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext()
+                .getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("Unauthenticated");
+        }
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Profile profile = user.getProfile();
+        if (profile == null) {
+            profile = new Profile();
+            profile.setUser(user);
+        }
+        profile.setUsername(request.getUsername());
+        profile.setEmail(request.getEmail());
+        user.setProfile(profile);
+        userRepository.save(user);
+        ProfileResponse response = ProfileResponse.builder()
+                .id(profile.getId())
+                .email(profile.getEmail())
+                .username(profile.getUsername())
+                .build();
+        return ApiResponse.<ProfileResponse>builder()
+                .status(200)
+                .message("Cập nhật profile thành công")
                 .data(response)
                 .build();
     }
