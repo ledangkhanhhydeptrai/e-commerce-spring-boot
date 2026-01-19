@@ -14,4 +14,5 @@ public class RegisterResponse {
     private LocalDate createdAt;
     private LocalDate updatedAt;
     private UserRole role;
+    private String fileUrl;
 }
