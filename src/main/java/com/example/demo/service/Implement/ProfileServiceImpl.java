@@ -37,6 +37,7 @@ public class ProfileServiceImpl implements ProfileService {
         if (profile == null) {
             profile = Profile.builder()
                     .user(user)
+                    .id(user.getId())
                     .username(user.getUsername())
                     .email(user.getEmail())
                     .build();

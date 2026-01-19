@@ -10,9 +10,11 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
     @Query("""
-            SELECT u FROM User u JOIN FETCH u.role WHERE u.username=:username
+            SELECT u FROM User u JOIN FETCH u.role WHERE u.email=:email
             """)
-    Optional<User> findByUsername(@Param("username") String username);
+    Optional<User> findByUsername(@Param("email") String email);
 
     boolean existsByUsername(String username);
+    Optional<User> findByEmail(String email);
+
 }

@@ -1,11 +1,9 @@
 package com.example.demo.service.Implement;
 
-import com.example.demo.Enum.UserRole;
 import com.example.demo.dto.request.LoginRequest;
 import com.example.demo.dto.response.LoginResponse;
 import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.response.ApiResponse;
 import com.example.demo.security.JwtUtil;
 import com.example.demo.service.Interface.LoginService;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -32,19 +30,19 @@ public class LoginServiceImpl implements LoginService {
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getUsername(),
+                            request.getEmail(),
                             request.getPassword()
                     )
             );
         } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("Sai password hoặc username");
+            throw new BadCredentialsException("Sai email hoặc mật khẩu");
         }
 
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("Username not found"));
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Email không tồn tại"));
 
         return LoginResponse.builder()
-                .token(jwtUtil.generateToken(user.getUsername()))
+                .token(jwtUtil.generateToken(user.getEmail()))
                 .role(user.getRole().getName())
                 .build();
     }
