@@ -4,6 +4,7 @@ import com.example.demo.Enum.UserRole;
 import com.example.demo.dto.request.RegisterRequest;
 import com.example.demo.entity.Role;
 import com.example.demo.entity.User;
+import com.example.demo.exception.EmailAlreadyExistsException;
 import com.example.demo.exception.UsernameAlreadyExistsException;
 import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
@@ -35,11 +36,12 @@ public class RegisterServiceImpl implements RegisterService {
 
     @Override
     public void registerUser(RegisterRequest request, MultipartFile file) {
-        String username = request.getUsername()
-                .trim()
-                .toLowerCase(); // 👈 CỰC KỲ QUAN TRỌNG
+        String email = request.getEmail().trim().toLowerCase();
+        String username = request.getUsername().trim().toLowerCase();
         System.out.println("Username: " + username);
-        if (userRepository.existsByUsername(username)) {
+        if (userRepository.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException();
+        } else if (userRepository.existsByUsername(username)) {
             throw new UsernameAlreadyExistsException();
         }
 
