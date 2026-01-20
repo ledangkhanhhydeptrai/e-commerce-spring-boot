@@ -33,7 +33,7 @@ public class AuthController {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.<Void>builder()
-                        .status(200)
+                        .status(201)
                         .message("Tạo tài khoản thành công")
                         .build());
     }

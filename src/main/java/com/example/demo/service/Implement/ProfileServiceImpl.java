@@ -40,6 +40,7 @@ public class ProfileServiceImpl implements ProfileService {
                     .id(user.getId())
                     .username(user.getUsername())
                     .email(user.getEmail())
+                    .image(user.getImage())
                     .build();
 
             user.setProfile(profile);   // liên kết ngược
@@ -48,6 +49,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         ProfileResponse response = ProfileResponse.builder()
                 .id(profile.getId())
+                .image(profile.getImage())
                 .username(profile.getUsername())
                 .email(profile.getEmail())
                 .build();
