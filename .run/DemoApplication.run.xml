@@ -16,7 +16,7 @@
     </envs>
     <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
     <module name="demo" />
-    <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.demo.DemoApplication" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.example.demo.PhoneApplication" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="com.example.demo.*" />
