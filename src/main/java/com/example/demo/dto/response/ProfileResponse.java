@@ -9,6 +9,7 @@ import java.util.UUID;
 @Builder
 public class ProfileResponse {
     private UUID id;
+    private String image;
     private String username;
     private String email;
 }
